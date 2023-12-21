@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Monitor</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function(){
+            $('#perform-attack-form').submit(function(event) {
+                event.preventDefault();  // Prevent form submission
+
+                // Perform AJAX request to execute attack
+                $.ajax({
+                    url: '/perform_attack',
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    success: function(response) {
+                        console.log("Detection Started!");  // Log success (you can modify this)
+                        startUpdating();  // Start updating MQTT messages after attack
+                    }
+                });
+            });
+
+            function startUpdating() {
+                function updateMessages() {
+                    $.ajax({
+                        url: '/get_messages',
+                        type: 'GET',
+                        success: function(data) {
+                            $('#mqtt-messages').val(data.messages.join('\n'));
+                        }
+                    });
+                }
+
+                setInterval(updateMessages, 2000);  // Update messages every 2 seconds (adjust as needed)
+            }
+        });
+    </script>
+    <style>
+        h1 {
+            text-align: center;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            color: #495057;
+        }
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* 2 columns */
+            gap: 20px;
+            margin: 20px;
+        }
+        .card {
+            border: 1px solid #ced4da;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background-color: #ffffff;
+        }
+
+        /* Reduce width by 10% for cards except "Begin Detection" and "Connected Devices" */
+        .card:not(:first-child):not(:nth-child(4)) {
+            width: 90%;
+        }
+
+        .card h2 {
+            color: #007bff;
+        }
+        .card p {
+            color: #6c757d;
+        }
+        .dropdown {
+            margin-top: 10px;
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            background-color: #ffffff;
+            color: #495057;
+        }
+        .dropdown option {
+            background-color: #ffffff;
+        }
+        .dropdown:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+        .submit-btn {
+            padding: 8px 16px;
+            background-color: #007bff;
+            color: #ffffff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .submit-btn:hover {
+            background-color: #0056b3;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            margin-bottom: 10px;
+            color: #28a745;
+        }
+
+        .card:nth-child(3) { /* Adjusted index to target the third card in the grid */
+            grid-column: 1 / span 2;
+            width: 10%; /* Adjust the width as needed */
+        }
+
+        /* Specific styling for "Connected Devices" card */
+        .card:nth-child(1) {
+            grid-column: 1 / span 1;
+        }
+
+        .cardmqtt {
+            border: 1px solid #ced4da;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background-color: #ffffff;
+            width: 90%; /* Reduce width by 10% for other cards */
+            height: 200px; /* Set a fixed height for the card */
+            overflow-y: auto; /* Enable scrolling if content exceeds the height */
+        }
+        .cardmqtt h2 {
+            color: #007bff;
+        }
+        .cardmqtt p {
+            color: #6c757d;
+        }
+        #mqtt-messages {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <h1>Application Monitoring Dashboard</h1>
+
+    <div class="dashboard">
+        <div class="card" style="grid-column: 1 / span 1; grid-row: 1 / span 1;">
+            <h2>Connected Devices</h2>
+            <p>Number of Connected Devices: {{ devices }}</p>
+        </div>
+        
+        <div class="card" style="grid-column: 2 / span 1; grid-row: 1 / span 1;">
+            <h2>Real-time Packet Analysis</h2>
+            <p>Packet Rate: {{ packet_rate }} packets/sec</p>
+        </div>
+
+        <div class="card" style="grid-column: 1 / span 2; grid-row: 2 / span 1; width:708px;height:200px;;">
+            <h2>Begin Detection</h2>
+            <form id="perform-attack-form" action="/perform_attack" method="post">
+                <label for="attack_type">Select Attack Type:</label>
+                <select name="attack_type" id="attack_type" class="dropdown">
+                    <option value="BotNet">BotNet</option>
+                    <option value="DDoS">DDoS</option>
+                    <option value="ARP Spoofing">ARP Spoofing</option>
+                    <option value="Phishing">Phishing</option>
+                    <option value="Battery Drain">Battery Drain</option>
+                </select>
+                <br>
+                <input type="submit" value="Begin Detection" class="submit-btn">
+            </form>
+        </div>
+
+        <div class="cardmqtt" style="grid-column: 2 / span 1; grid-row: 2 / span 1;height:400px;;">
+            <h2>MQTT Messages</h2>
+            <textarea id="mqtt-messages" readonly></textarea>
+        </div>
+    </div>
+</body>
+</html>
